@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://filefit.github.io/sitemap.xml

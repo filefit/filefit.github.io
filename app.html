@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Compress PDFs and photos to an exact KB size, resize photos and signatures, merge and convert. Free, works in your browser, nothing is uploaded.">
+<link rel="canonical" href="https://filefit.github.io/app.html">
+<title>FileFit — PDF &amp; photo to exact size</title>
+<link rel="icon" href="icon32.png">
+<link rel="stylesheet" href="tool.css">
+<script src="pdf-lib.min.js"></script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand"><img src="icon48.png" alt=""><div><h1>FileFit</h1><p>PDFs and photos to the exact size forms ask for. Files never leave your computer.</p></div></div>
+</header>
+
+<nav id="tabs" role="tablist">
+  <button role="tab" data-tab="size" aria-selected="true">Compress to size</button>
+  <button role="tab" data-tab="photo">Photo &amp; signature</button>
+  <button role="tab" data-tab="merge">Merge PDFs</button>
+  <button role="tab" data-tab="pages">Pages</button>
+  <button role="tab" data-tab="convert">Convert</button>
+  <button role="tab" data-tab="sign">Sign &amp; fill <span class="pro-tag">PRO</span></button>
+  <button role="tab" data-tab="pro" id="pro-tab">Go Pro</button>
+</nav>
+
+<main>
+  <div id="fetchbar" class="notice" hidden></div>
+
+  <!-- ===================================================== compress to size -->
+  <section data-panel="size">
+    <label class="drop" data-for="size-file">
+      <input type="file" id="size-file" accept="application/pdf,image/*" multiple>
+      <span>Drop a PDF or image here, or <u>choose a file</u> <em class="pro-hint">(several at once with Pro)</em></span>
+      <small class="picked"></small>
+    </label>
+    <div class="row">
+      <label>Maximum size <span class="unit-input"><input type="number" id="size-max" min="5" step="1" value="200"> KB</span></label>
+      <label>Minimum size <span class="unit-input"><input type="number" id="size-min" min="0" step="1" placeholder="optional"> KB</span></label>
+    </div>
+    <div class="chips" data-target="size-max">
+      <button data-v="20">20 KB</button><button data-v="50">50 KB</button><button data-v="100">100 KB</button>
+      <button data-v="200">200 KB</button><button data-v="300">300 KB</button><button data-v="500">500 KB</button>
+      <button data-v="1024">1 MB</button><button data-v="2048">2 MB</button>
+    </div>
+    <label class="check"><input type="checkbox" id="size-gray"> Black &amp; white (much smaller for scanned documents)</label>
+    <button class="primary" id="size-go">Compress</button>
+  </section>
+
+  <!-- ===================================================== photo & signature -->
+  <section data-panel="photo" hidden>
+    <label class="drop" data-for="photo-file">
+      <input type="file" id="photo-file" accept="image/*" multiple>
+      <span>Drop a photo or signature scan here, or <u>choose a file</u> <em class="pro-hint">(several at once with Pro)</em></span>
+      <small class="picked"></small>
+    </label>
+    <label>Preset
+      <select id="photo-preset">
+        <option value="passport">Passport-style photo — 35×45 mm, 300 dpi</option>
+        <option value="photo">Form photo — 200×230 px, 20–50 KB</option>
+        <option value="sign">Signature — 140×60 px, 10–20 KB</option>
+        <option value="square">Square photo — 600×600 px, under 100 KB</option>
+        <option value="custom">Custom</option>
+      </select>
+    </label>
+    <div class="row">
+      <label>Width <span class="unit-input"><input type="number" id="photo-w" min="16"> px</span></label>
+      <label>Height <span class="unit-input"><input type="number" id="photo-h" min="16"> px</span></label>
+      <label>Min <span class="unit-input"><input type="number" id="photo-min" min="0"> KB</span></label>
+      <label>Max <span class="unit-input"><input type="number" id="photo-max" min="2"> KB</span></label>
+    </div>
+    <div class="row">
+      <label>Fit
+        <select id="photo-fit">
+          <option value="cover">Crop to fill (no borders)</option>
+          <option value="contain">Fit inside (white borders)</option>
+          <option value="stretch">Stretch</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="photo-gray"> Black &amp; white</label>
+    </div>
+    <p class="hint">Presets are common examples. Always use the exact sizes in your form's official instructions.</p>
+    <button class="primary" id="photo-go">Make photo</button>
+  </section>
+
+  <!-- ===================================================== merge -->
+  <section data-panel="merge" hidden>
+    <label class="drop" data-for="merge-files">
+      <input type="file" id="merge-files" accept="application/pdf,image/*" multiple>
+      <span>Drop PDFs (and images) to join, or <u>choose files</u></span>
+    </label>
+    <ol id="merge-list" class="filelist"></ol>
+    <button class="primary" id="merge-go">Merge into one PDF</button>
+  </section>
+
+  <!-- ===================================================== pages -->
+  <section data-panel="pages" hidden>
+    <label class="drop" data-for="pages-file">
+      <input type="file" id="pages-file" accept="application/pdf">
+      <span>Drop a PDF here, or <u>choose a file</u></span>
+      <small class="picked"></small>
+    </label>
+    <div class="row">
+      <label>Action
+        <select id="pages-action">
+          <option value="extract">Keep only these pages</option>
+          <option value="remove">Delete these pages</option>
+          <option value="split">Split into one PDF per page</option>
+          <option value="rotate">Rotate these pages 90° clockwise</option>
+          <option value="rotate180">Rotate these pages 180°</option>
+          <option value="rotateL">Rotate these pages 90° anticlockwise</option>
+        </select>
+      </label>
+      <label>Pages <input type="text" id="pages-range" placeholder="e.g. 1-3, 5, 8-"></label>
+    </div>
+    <button class="primary" id="pages-go">Apply</button>
+  </section>
+
+  <!-- ===================================================== convert -->
+  <section data-panel="convert" hidden>
+    <label class="drop" data-for="convert-files">
+      <input type="file" id="convert-files" accept="application/pdf,image/*" multiple>
+      <span>Drop images (to make a PDF) or a PDF (to get images)</span>
+    </label>
+    <ol id="convert-list" class="filelist"></ol>
+    <div class="row">
+      <label>Images → PDF page size
+        <select id="convert-page"><option value="a4">A4 with margins</option><option value="fit">Same as image</option></select>
+      </label>
+      <label>PDF → images format
+        <select id="convert-format"><option value="image/jpeg">JPG</option><option value="image/png">PNG</option></select>
+      </label>
+    </div>
+    <button class="primary" id="convert-go">Convert</button>
+  </section>
+
+  <!-- ===================================================== sign & fill (Pro) -->
+  <section data-panel="sign" hidden>
+    <label class="drop" data-for="sign-file">
+      <input type="file" id="sign-file" accept="application/pdf">
+      <span>Drop the PDF to sign or fill, or <u>choose a file</u></span>
+      <small class="picked"></small>
+    </label>
+    <div id="sign-work" hidden>
+      <div id="sign-fields" hidden>
+        <h3>Form fields</h3>
+        <div id="sign-field-list" class="fields"></div>
+        <label class="check"><input type="checkbox" id="sign-flatten" checked> Lock the filled values (flatten)</label>
+      </div>
+      <h3>Signature, name &amp; date</h3>
+      <div class="row">
+        <label class="drop small" data-for="sig-file">
+          <input type="file" id="sig-file" accept="image/*">
+          <span>Upload a photo of your signature</span>
+        </label>
+        <div class="pad-wrap">
+          <canvas id="sig-pad" width="600" height="200" aria-label="Draw your signature"></canvas>
+          <div class="pad-actions"><button id="sig-clear" type="button">Clear</button><button id="sig-use" type="button">Use drawing</button></div>
+        </div>
+      </div>
+      <div class="row">
+        <label>Place
+          <select id="sign-kind">
+            <option value="image">Signature</option>
+            <option value="name">Text</option>
+            <option value="date">Today's date</option>
+          </select>
+        </label>
+        <label>Text <input type="text" id="sign-text" placeholder="Your name"></label>
+        <label>Signature width <span class="unit-input"><input type="number" id="sign-width" min="5" max="90" value="28"> % of page</span></label>
+        <label>Page <select id="sign-page"></select></label>
+      </div>
+      <p class="hint">Click on the page where it should go. Click a placed item to remove it.</p>
+      <div class="sheet"><canvas id="sign-preview"></canvas><div id="sign-overlay"></div></div>
+      <button class="primary" id="sign-go">Save signed PDF</button>
+    </div>
+  </section>
+
+  <!-- ===================================================== pro -->
+  <section data-panel="pro" hidden>
+    <div id="pro-active" hidden>
+      <h2>FileFit Pro is active ✓</h2>
+      <p id="pro-details"></p>
+      <button id="pro-deactivate" type="button">Remove from this browser</button>
+    </div>
+    <div id="pro-inactive">
+      <h2>FileFit Pro</h2>
+      <ul class="benefits">
+        <li><b>Batch</b>: compress or resize many files in one go</li>
+        <li><b>Sign PDFs</b>: upload or draw your signature, add name and date</li>
+        <li><b>Fill PDF forms</b>: type into form fields and lock them</li>
+        <li>Supports development of new tools. Still 100% on your device.</li>
+      </ul>
+      <div class="buy">
+        <a id="buy-usd" class="primary" target="_blank" rel="noopener" hidden>Buy with card (USD)</a>
+        <a id="buy-inr-m" class="primary" target="_blank" rel="noopener" hidden>₹99 / month (UPI, card)</a>
+        <a id="buy-inr-y" class="primary" target="_blank" rel="noopener" hidden>₹799 / year (UPI, card)</a>
+      </div>
+      <p class="hint" id="prices"></p>
+      <h3>Already bought?</h3>
+      <div class="row">
+        <label>Licence key <input type="text" id="act-key" placeholder="FF-XXXX-XXXX-XXXX-XXXX" autocomplete="off"></label>
+      </div>
+      <p class="hint">After paying, enter the email you paid with and the payment ID from your receipt (starts with <b>pay_</b>).</p>
+      <p class="hint">or</p>
+      <div class="row">
+        <label>Purchase email <input type="text" id="act-email" autocomplete="email"></label>
+        <label>Order / payment ID <input type="text" id="act-order" placeholder="from your receipt"></label>
+      </div>
+      <button class="primary" id="act-go">Activate</button>
+    </div>
+  </section>
+
+  <section id="status" class="status" hidden aria-live="polite"></section>
+  <section id="results" class="results" hidden></section>
+</main>
+
+<footer>
+  <span>Everything runs on your device. Nothing is uploaded. · <a href="/">Home</a> · <a href="/guides.html">Guides</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></span>
+</footer>
+</body>
+</html>
