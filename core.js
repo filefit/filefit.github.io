@@ -379,6 +379,23 @@ export async function compressPdf(blob, { maxKB, grayscale = false, onProgress }
   return { ...best, method: "raster", notes };
 }
 
+/**
+ * Grow a PDF to at least `target` bytes by adding one unused, uncompressed stream object full of
+ * spaces. Pages, text and appearance are untouched; nothing references the object, so viewers ignore it.
+ */
+export async function padPdf(blob, target) {
+  let out = blob;
+  for (let i = 0; i < 3 && out.size < target; i++) {
+    const doc = await loadPdfLib(await blob.arrayBuffer());
+    const base = (await doc.save({ useObjectStreams: false })).length;
+    const extra = Math.max(64, target - base + 256 + i * 1024);
+    const stream = doc.context.stream(new Uint8Array(extra).fill(0x20));
+    doc.context.register(stream);
+    out = pdfBlob(await doc.save({ useObjectStreams: false }));
+  }
+  return out;
+}
+
 // ------------------------------------------------------------------ Pro: sign & fill
 /**
  * Turn a photographed/scanned signature into a transparent PNG: near-white pixels become

@@ -214,7 +214,15 @@ $("#size-go").addEventListener("click", (e) => run(e.target, async () => {
     if (core.isPdf(file)) {
       const r = await core.compressPdf(file, { maxKB, grayscale: gray, onProgress: files.length === 1 ? (m) => setStatus(m + "…") : null });
       const n = [...r.notes];
-      if (minKB && r.blob.size < minKB * 1024) n.push(`Below your ${minKB} KB minimum. Most forms accept smaller files; check yours.`);
+      if (minKB && r.blob.size < core.minBytesFor(minKB)) {
+        const padded = await core.padPdf(r.blob, core.minBytesFor(minKB));
+        if (padded.size >= core.minBytesFor(minKB) && padded.size <= core.maxBytesFor(maxKB)) {
+          r.blob = padded;
+          n.push(`Raised to your ${minKB} KB minimum. The pages are unchanged.`);
+        } else {
+          n.push(`Below your ${minKB} KB minimum and could not be raised. Check your form's rules.`);
+        }
+      }
       return { item: { blob: r.blob, name: core.baseName(file.name) + "_" + Math.round(maxKB) + "KB.pdf", detail: `was ${fmtSize(file.size)}` }, notes: n };
     }
     if (files.length === 1) setStatus("Compressing…");
@@ -569,6 +577,7 @@ if (startTab === "photo") {
   let any = false;
   for (const [k, id] of Object.entries(custom)) if (numParam(k)) { $(id).value = numParam(k); any = true; }
   if (any && !q.get("preset")) $("#photo-preset").value = "custom";
+  if (["cover", "contain", "stretch"].includes(q.get("fit"))) $("#photo-fit").value = q.get("fit");
 }
 loadFromHash();
 licence.status().then(applyPro);
